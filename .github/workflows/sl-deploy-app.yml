@@ -41,5 +41,5 @@ jobs:
     - name: Install Ruby
       run: |
         sudo apt install ruby-full
-        gem install bundler
-        bundle install --path vendor/bundle
+        sudo gem install bundler
+        sudo bundle install --path vendor/bundle
