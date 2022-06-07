@@ -47,5 +47,5 @@ jobs:
         echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
         echo 'eval "$(rbenv init -)"' >> ~/.bashrc
         source ~/.bashrc
-        rbenv install -l 2.6.8
+        rbenv install -l 2.6.10
         ruby --version
