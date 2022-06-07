@@ -18,7 +18,7 @@ env:
 jobs:
   
   application-resources:
-    name: Zip application
+    name: Install Resources
     runs-on: ubuntu-latest
 
     steps:
@@ -43,85 +43,3 @@ jobs:
         sudo apt install ruby-full
         gem install bundler
         bundle install --path vendor/bundle
-    
-    - name: Zip app
-      run: |
-        mkdir -p app/build
-        mkdir app/build/node_modules
-        cp -R app/dist/* app/build
-        cp app/package.json app/build
-        cp -R app/node_modules/* app/build/node_modules
-        ls -al app/build
-        cd app/build
-        zip -rq app.zip *
-        
-    - name: Upload application to s3
-      run: |
-        aws s3 cp app/build/app.zip s3://s3-${{github.event.inputs.environment}}-matrix-artifactory-01/artifactory-validate-code/
-      
-      env:
-        AWS_ACCESS_KEY_ID:  ${{secrets.AWS_ACCESS_KEY_ID}}
-        AWS_SECRET_ACCESS_KEY:  ${{secrets.AWS_SECRET_ACCESS_KEY}}
-        AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
-
-  deploy-app:
-    name: Deploy application
-    runs-on: ubuntu-latest
-    needs: [application-resources]
-
-    steps:
-
-    - name: Checkout Repo
-      uses: actions/checkout@v2
-
-    - name: Install AWS cli
-      run: |
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip awscliv2.zip
-        sudo ./aws/install --update
-
-    - name: Install Terraform
-      run: |
-        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-        sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-        sudo apt-get update && sudo apt-get install terraform
-
-    - name: Replace variables environment
-      run: |
-        sed -i 's|{ENVIRONMENT}|${{env.ENVIRONMENT}}|g' terraform_deploy/backend.tfvars
-        sed -i 's|{ENVIRONMENT}|${{env.ENVIRONMENT}}|g' terraform_deploy/backend_remote_state.tf
-        sed -i 's|{ENVIRONMENT}|${{env.ENVIRONMENT}}|g' terraform_deploy/${{env.ENVIRONMENT}}-variables.tfvars
-        sed -i 's|{MODULE}|${{env.MODULE}}|g' terraform_deploy/${{env.ENVIRONMENT}}-variables.tfvars
-        sed -i 's|{MODULE}|${{env.MODULE}}|g' terraform_deploy/backend.tfvars
-      env:
-        ENVIRONMENT: ${{github.event.inputs.environment}}
-
-    - name: Terraform Init
-      run: |
-        cd terraform_deploy
-        terraform init -backend-config backend.tfvars
-      env:
-        AWS_ACCESS_KEY_ID:  ${{secrets.AWS_ACCESS_KEY_ID}}
-        AWS_SECRET_ACCESS_KEY:  ${{secrets.AWS_SECRET_ACCESS_KEY}}
-        AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}   
-        ENVIRONMENT: ${{github.event.inputs.environment}}
-
-    - name: Terraform Plan
-      run: |
-        cd terraform_deploy
-        terraform plan -var-file ${{env.ENVIRONMENT}}-variables.tfvars -out terraform.tfplan
-      env:
-        AWS_ACCESS_KEY_ID:  ${{secrets.AWS_ACCESS_KEY_ID}}
-        AWS_SECRET_ACCESS_KEY:  ${{secrets.AWS_SECRET_ACCESS_KEY}}
-        AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
-        ENVIRONMENT: ${{github.event.inputs.environment}}
-        TRUORA_API_KEY: ${{secrets.TRUORA_API_KEY}}   
-
-    - name: Terraform Apply
-      run: |
-        cd terraform_deploy
-        terraform apply terraform.tfplan
-      env:
-        AWS_ACCESS_KEY_ID:  ${{secrets.AWS_ACCESS_KEY_ID}}
-        AWS_SECRET_ACCESS_KEY:  ${{secrets.AWS_SECRET_ACCESS_KEY}}
-        AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
