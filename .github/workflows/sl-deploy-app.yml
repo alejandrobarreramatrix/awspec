@@ -20,6 +20,7 @@ jobs:
   application-resources:
     name: Install Resources
     runs-on: ubuntu-latest
+    container: ruby:2.6-alpine
 
     steps:
 
