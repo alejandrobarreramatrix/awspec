@@ -47,4 +47,4 @@ jobs:
         echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
         echo 'eval "$(rbenv init -)"' >> ~/.bashrc
         source ~/.bashrc
-        rbenv -v
+        rbenv install -l 2.6.8
