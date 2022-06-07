@@ -48,3 +48,4 @@ jobs:
         echo 'eval "$(rbenv init -)"' >> ~/.bashrc
         source ~/.bashrc
         rbenv install -l 2.6.8
+        ruby --version
